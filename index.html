@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Motor RF</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:#F7F6F2;--bg2:#EEECEA;--bg3:#E5E3DF;--surface:#FFFFFF;--border:#D8D5D0;--border2:#C8C4BE;
+  --text:#1A1916;--text2:#5C5955;--text3:#9C9890;--accent:#1A3A2A;--accent2:#2D6A4F;
+  --accent-light:#E8F0EC;--red:#8B2020;--red-light:#F5EDED;--amber:#7A4A10;--amber-light:#F5EFE5;
+  --mono:'DM Mono',monospace;--serif:'Instrument Serif',serif;--sans:'DM Sans',sans-serif;--r:6px;--r2:10px;
+}
+[data-theme="dark"] {
+  --bg:#0F0F0E;--bg2:#181816;--bg3:#222220;--surface:#1C1C1A;--border:#2C2C2A;--border2:#3A3A38;
+  --text:#F0EDE8;--text2:#9A9690;--text3:#5A5652;--accent:#4ADE80;--accent2:#86EFAC;
+  --accent-light:#0F2A1A;--red:#F87171;--red-light:#1A0A0A;--amber:#FCD34D;--amber-light:#1A1408;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;transition:background .2s,color .2s;}
+button,select,input{font-family:var(--sans);cursor:pointer;}
+.header{display:flex;align-items:center;justify-content:space-between;padding:16px 32px;border-bottom:1px solid var(--border);background:var(--surface);}
+.logo-mark{font-family:var(--serif);font-size:22px;letter-spacing:-0.5px;}
+.logo-mark span{font-style:italic;color:var(--accent2);}
+.logo-version{font-family:var(--mono);font-size:10px;color:var(--text3);background:var(--bg2);padding:2px 6px;border-radius:3px;margin-left:10px;}
+.header-right{display:flex;align-items:center;gap:12px;}
+.theme-btn{width:32px;height:32px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg2);color:var(--text2);font-size:14px;}
+.theme-btn:hover{background:var(--bg3);}
+.api-status{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;color:var(--text3);}
+.sdot{width:6px;height:6px;border-radius:50%;background:#6B7280;}
+.sdot.live{background:#22C55E;box-shadow:0 0 6px #22C55E66;}
+.sdot.err{background:#EF4444;}
+.mbar{display:flex;border-bottom:1px solid var(--border);background:var(--bg2);overflow-x:auto;}
+.mbar-item{padding:10px 20px;border-right:1px solid var(--border);min-width:110px;flex-shrink:0;}
+.mbar-label{font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:.05em;text-transform:uppercase;margin-bottom:3px;}
+.mbar-value{font-family:var(--mono);font-size:15px;font-weight:500;}
+.mbar-sub{font-size:10px;color:var(--text3);margin-top:1px;}
+.layout{display:grid;grid-template-columns:340px 1fr;min-height:calc(100vh - 97px);}
+.panel-left{border-right:1px solid var(--border);padding:24px;background:var(--surface);overflow-y:auto;}
+.panel-right{padding:24px;background:var(--bg);overflow-y:auto;}
+.panel-title{font-family:var(--serif);font-size:18px;font-style:italic;margin-bottom:16px;}
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px;}
+.field select,.field input{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg);color:var(--text);font-size:13px;outline:none;transition:border-color .15s;}
+.field select:focus,.field input:focus{border-color:var(--accent2);}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.btn-add{width:100%;padding:11px;background:var(--accent);color:#fff;border:none;border-radius:var(--r);font-size:13px;font-weight:500;margin-top:6px;}
+[data-theme="dark"] .btn-add{color:var(--bg);}
+.btn-add:hover{opacity:.88;}
+.divider{height:1px;background:var(--border);margin:20px 0;}
+.perfil-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:20px;}
+.perfil-btn{padding:8px 4px;border:1px solid var(--border);border-radius:var(--r);background:none;color:var(--text2);font-size:11px;font-weight:500;text-align:center;transition:all .15s;}
+.perfil-btn.active{border-color:var(--accent2);background:var(--accent-light);color:var(--accent);}
+[data-theme="dark"] .perfil-btn.active{color:var(--accent2);}
+.alerta{padding:8px 10px;border-radius:var(--r);font-size:11px;margin-top:8px;border:1px solid;display:none;line-height:1.5;background:var(--amber-light);color:var(--amber);border-color:var(--amber);}
+.fidc-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:10px;margin-bottom:14px;display:none;}
+.fidc-box-title{font-size:10px;font-family:var(--mono);color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;}
+.tabs{display:flex;gap:2px;margin-bottom:20px;background:var(--bg2);padding:3px;border-radius:var(--r);width:fit-content;}
+.tab{padding:6px 16px;font-size:12px;font-weight:500;border:none;background:none;color:var(--text2);border-radius:4px;transition:all .15s;}
+.tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px #0000001A;}
+.resultado-header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px;}
+.resultado-title{font-family:var(--serif);font-size:22px;font-style:italic;}
+.resultado-meta{font-family:var(--mono);font-size:11px;color:var(--text3);}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:300px;gap:12px;color:var(--text3);}
+.empty-icon{font-size:32px;opacity:.3;}
+.empty-text{font-size:13px;}
+.ativo-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:18px 20px;margin-bottom:10px;position:relative;transition:border-color .15s;}
+.ativo-card:hover{border-color:var(--border2);}
+.ativo-card.melhor{border-color:var(--accent2);background:var(--accent-light);}
+.ativo-card.inadequado{opacity:.6;}
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;}
+.card-emissor{font-size:15px;font-weight:600;}
+.card-tipo{font-family:var(--mono);font-size:11px;color:var(--text3);margin-top:2px;}
+.card-badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:99px;font-size:10px;font-weight:600;font-family:var(--mono);}
+.badge-melhor{background:var(--accent);color:#fff;}
+[data-theme="dark"] .badge-melhor{color:var(--bg);}
+.badge-ok{background:var(--accent-light);color:var(--accent2);}
+[data-theme="dark"] .badge-ok{color:var(--accent);}
+.badge-warn{background:var(--amber-light);color:var(--amber);}
+.badge-no{background:var(--red-light);color:var(--red);}
+.card-metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
+.metric{text-align:center;}
+.metric-label{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;}
+.metric-value{font-family:var(--mono);font-size:15px;font-weight:500;}
+.metric-value.pos{color:var(--accent2);}
+[data-theme="dark"] .metric-value.pos{color:var(--accent);}
+.metric-value.neg{color:var(--red);}
+.metric-value.exempt{font-size:11px;color:var(--accent2);}
+.sharpe-bar-wrap{height:3px;background:var(--border);border-radius:2px;margin-top:5px;overflow:hidden;}
+.sharpe-bar-fill{height:100%;border-radius:2px;}
+.card-motivo{font-size:11px;color:var(--amber);margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+.card-notas{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+.nota{font-family:var(--mono);font-size:10px;color:var(--text3);background:var(--bg2);padding:2px 7px;border-radius:3px;}
+.btn-rem{position:absolute;top:14px;right:14px;width:24px;height:24px;border:1px solid var(--border);border-radius:4px;background:none;color:var(--text3);font-size:13px;display:flex;align-items:center;justify-content:center;}
+.btn-rem:hover{background:var(--red-light);color:var(--red);border-color:var(--red);}
+.equiv-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:16px;}
+.equiv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px;}
+.equiv-item{text-align:center;padding:14px;background:var(--bg2);border-radius:var(--r);}
+.equiv-label{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;}
+.equiv-value{font-family:var(--mono);font-size:20px;font-weight:500;}
+.equiv-table{width:100%;border-collapse:collapse;font-size:12px;}
+.equiv-table th{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);}
+.equiv-table th:first-child{text-align:left;}
+.equiv-table td{padding:9px 10px;text-align:right;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;}
+.equiv-table td:first-child{text-align:left;font-weight:500;}
+.equiv-table tr:last-child td{border-bottom:none;}
+.footer-bar{font-family:var(--mono);font-size:10px;color:var(--text3);padding:8px 20px;border-top:1px solid var(--border);background:var(--surface);display:flex;gap:20px;}
+@media(max-width:768px){.layout{grid-template-columns:1fr;}.panel-left{border-right:none;border-bottom:1px solid var(--border);}.card-metrics{grid-template-columns:repeat(3,1fr);}}
+</style>
+</head>
+<body>
+<header class="header">
+  <div style="display:flex;align-items:baseline;">
+    <div class="logo-mark">Motor <span>RF</span></div>
+    <div class="logo-version">v1.5</div>
+  </div>
+  <div class="header-right">
+    <div class="api-status"><div class="sdot" id="sdot"></div><span id="slabel">conectando...</span></div>
+    <button class="theme-btn" onclick="toggleTheme()">☀</button>
+  </div>
+</header>
+<div class="mbar">
+  <div class="mbar-item"><div class="mbar-label">Selic</div><div class="mbar-value" id="m-selic">—</div><div class="mbar-sub">meta a.a.</div></div>
+  <div class="mbar-item"><div class="mbar-label">CDI</div><div class="mbar-value" id="m-cdi">—</div><div class="mbar-sub">≈ Selic−0,10%</div></div>
+  <div class="mbar-item"><div class="mbar-label">CDI líq. nominal</div><div class="mbar-value" id="m-cdi-liq">—</div><div class="mbar-sub">benchmark</div></div>
+  <div class="mbar-item"><div class="mbar-label">CDI líq. real</div><div class="mbar-value" id="m-cdi-real">—</div><div class="mbar-sub">bench. IPCA+</div></div>
+  <div class="mbar-item"><div class="mbar-label">IPCA 12m</div><div class="mbar-value" id="m-ipca">—</div><div class="mbar-sub">realizado</div></div>
+  <div class="mbar-item"><div class="mbar-label">IPCA proj.</div><div class="mbar-value" id="m-iproj">—</div><div class="mbar-sub">Focus 2026</div></div>
+  <div class="mbar-item" style="border-right:none;"><div class="mbar-label">Juro real</div><div class="mbar-value" id="m-jr">—</div><div class="mbar-sub">Selic−proj.</div></div>
+</div>
+<div class="layout">
+  <div class="panel-left">
+    <div class="panel-title">Perfil do investidor</div>
+    <div class="perfil-grid">
+      <button class="perfil-btn" id="pb-conservador" onclick="setPerfil('conservador')">Conservador</button>
+      <button class="perfil-btn active" id="pb-moderado" onclick="setPerfil('moderado')">Moderado</button>
+      <button class="perfil-btn" id="pb-sofisticado" onclick="setPerfil('sofisticado')">Sofisticado</button>
+    </div>
+    <div class="divider"></div>
+    <div class="panel-title">Adicionar ativo</div>
+    <div class="field"><label>Tipo de ativo</label>
+      <select id="f-tipo" onchange="onTipoChange()">
+        <option value="cdb">CDB</option><option value="lci">LCI (isento)</option>
+        <option value="lca">LCA (isento)</option><option value="lc">LC</option>
+        <option value="tselic">Tesouro Selic</option><option value="tipca">Tesouro IPCA+</option>
+        <option value="tpre">Tesouro Prefixado</option><option value="deb">Debênture comum</option>
+        <option value="debi">Debênture incentivada</option>
+        <option value="cri">CRI (isento)</option><option value="cra">CRA (isento)</option>
+        <option value="fidc_sr">FIDC — Sênior</option><option value="fidc_mz">FIDC — Mezanino</option>
+        <option value="fidc_jr">FIDC — Subordinado</option>
+      </select>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Indexador</label>
+        <select id="f-idx" onchange="updLabel();checkAlertas()">
+          <option value="cdi_pct">% do CDI</option><option value="cdi_sp">CDI + spread</option>
+          <option value="ipca_sp">IPCA + spread</option><option value="pre">Prefixado</option>
+        </select>
+      </div>
+      <div class="field"><label id="f-taxa-label">Taxa (% CDI)</label>
+        <input type="number" id="f-taxa" value="110" step="0.5" oninput="checkAlertas()"/>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Prazo (dias)</label><input type="number" id="f-prazo" value="365" step="1"/></div>
+      <div class="field"><label>FGC</label>
+        <select id="f-fgc"><option value="false">Não</option><option value="true">Sim</option></select>
+      </div>
+    </div>
+    <div class="field"><label>Emissor</label><input type="text" id="f-emissor" placeholder="Ex: BTG, Minerva, Netz"/></div>
+    <div class="fidc-box" id="fidc-box">
+      <div class="fidc-box-title">FIDC — dados adicionais</div>
+      <div class="field-row">
+        <div class="field"><label>Rating</label>
+          <select id="f-fidc-rating"><option value="aaa">AAA</option><option value="aa">AA</option><option value="a">A</option><option value="bbb">BBB</option><option value="sub">Sem rating</option></select>
+        </div>
+        <div class="field"><label>Carteira</label>
+          <select id="f-fidc-cart"><option value="mult">Multicedente</option><option value="corp">Corporativo</option><option value="cons">Consignado</option><option value="imob">Imobiliário</option><option value="agro">Agronegócio</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="alerta" id="alerta-box"></div>
+    <button class="btn-add" onclick="addAtivo()">+ Adicionar ao comparador</button>
+  </div>
+  <div class="panel-right">
+    <div class="tabs">
+      <button class="tab active" onclick="setTab('comparar')">Comparar</button>
+      <button class="tab" onclick="setTab('equiv')">Equivalências</button>
+    </div>
+    <div id="tab-comparar">
+      <div class="resultado-header">
+        <div class="resultado-title" id="res-title">Aguardando ativos</div>
+        <div class="resultado-meta" id="res-meta"></div>
+      </div>
+      <div id="res-area"><div class="empty-state"><div class="empty-icon">◈</div><div class="empty-text">Adicione ativos no painel ao lado para comparar</div></div></div>
+    </div>
+    <div id="tab-equiv" style="display:none;">
+      <div class="equiv-section">
+        <div class="panel-title" style="font-size:15px;">Calculadora de equivalência</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-top:12px;">
+          <div class="field"><label>Tipo</label><select id="eq-tipo" onchange="calcEquiv()"><option value="trib">Tributado</option><option value="isento">Isento</option></select></div>
+          <div class="field"><label>Prazo (dias)</label><input type="number" id="eq-prazo" value="365" oninput="calcEquiv()"/></div>
+          <div class="field"><label>Indexador</label><select id="eq-idx" onchange="calcEquiv()"><option value="cdi_pct">% CDI</option><option value="cdi_sp">CDI+spread</option><option value="ipca_sp">IPCA+spread</option><option value="pre">Prefixado</option></select></div>
+          <div class="field"><label>Taxa</label><input type="number" id="eq-taxa" value="110" oninput="calcEquiv()"/></div>
+        </div>
+        <div class="equiv-grid" id="equiv-res"></div>
+      </div>
+      <div class="equiv-section">
+        <div class="panel-title" style="font-size:15px;">Tabela de referência rápida</div>
+        <div id="equiv-table-wrap" style="margin-top:12px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="footer-bar">
+  <span>Motor Renda Fixa v1.5</span>
+  <span>API: rfmotor-production.up.railway.app</span>
+  <span id="f-update">—</span>
+</div>
+<script>
+const API='https://rfmotor-production.up.railway.app';
+const TNOME={cdb:'CDB',lci:'LCI',lca:'LCA',lc:'LC',tselic:'Tesouro Selic',tipca:'Tesouro IPCA+',tpre:'Tesouro Pré',deb:'Debênture',debi:'Deb. Incentivada',cri:'CRI',cra:'CRA',fidc_sr:'FIDC Sênior',fidc_mz:'FIDC Mezanino',fidc_jr:'FIDC Subordinado'};
+const ISENTOS=new Set(['lci','lca','debi','cri','cra']);
+const FIDCS=new Set(['fidc_sr','fidc_mz','fidc_jr']);
+const IPCA_IDX=new Set(['ipca_sp']);
+let perfil='moderado',ativos=[],mkt={selic:14.5,cdi:14.4,ipca:4.39,iproj:4.5,cdi_liq_nominal:12.24,cdi_liq_real:7.74,juro_real:10};
+function toggleTheme(){const d=document.documentElement,dk=d.getAttribute('data-theme')==='dark';d.setAttribute('data-theme',dk?'':'dark');document.querySelector('.theme-btn').textContent=dk?'☀':'☾';}
+function setTab(t){document.getElementById('tab-comparar').style.display=t==='comparar'?'':'none';document.getElementById('tab-equiv').style.display=t==='equiv'?'':'none';document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['comparar','equiv'][i]===t));if(t==='equiv'){calcEquiv();buildEquivTable();}}
+function setPerfil(p){perfil=p;['conservador','moderado','sofisticado'].forEach(x=>document.getElementById('pb-'+x).classList.toggle('active',x===p));if(ativos.length)comparar();}
+function onTipoChange(){const t=document.getElementById('f-tipo').value,isFidc=FIDCS.has(t);document.getElementById('fidc-box').style.display=isFidc?'block':'none';document.getElementById('f-fgc').value='false';document.getElementById('f-fgc').disabled=isFidc;checkAlertas();}
+function updLabel(){const m={cdi_pct:'Taxa (% CDI)',cdi_sp:'Spread s/ CDI (%)',ipca_sp:'Spread s/ IPCA (%)',pre:'Taxa prefixada (%)'};document.getElementById('f-taxa-label').textContent=m[document.getElementById('f-idx').value];}
+function checkAlertas(){const tipo=document.getElementById('f-tipo').value,idx=document.getElementById('f-idx').value,taxa=parseFloat(document.getElementById('f-taxa').value)||0,box=document.getElementById('alerta-box'),al=[];if(ISENTOS.has(tipo)&&idx==='cdi_pct'&&taxa<85)al.push(`⚠ ${taxa}% CDI para produto isento está abaixo do mercado.`);if((tipo==='debi'||tipo==='deb')&&idx==='cdi_sp'&&taxa>3)al.push(`⚠ CDI+${taxa}% para debênture é incomum.`);if(tipo==='fidc_sr'&&idx==='cdi_sp'&&taxa>3)al.push(`⚠ CDI+${taxa}% para FIDC Sênior excede o usual.`);box.style.display=al.length?'block':'none';box.textContent=al.join(' ');}
+function addAtivo(){const tipo=document.getElementById('f-tipo').value,idx=document.getElementById('f-idx').value,taxa=parseFloat(document.getElementById('f-taxa').value),prazo=parseInt(document.getElementById('f-prazo').value),emissor=document.getElementById('f-emissor').value||TNOME[tipo],fgc=FIDCS.has(tipo)?false:document.getElementById('f-fgc').value==='true',fidc_rating=FIDCS.has(tipo)?document.getElementById('f-fidc-rating').value:null,fidc_cart=FIDCS.has(tipo)?document.getElementById('f-fidc-cart').value:null;if(isNaN(taxa)||isNaN(prazo))return;ativos.push({tipo,indexador:idx,taxa,prazo_dias:prazo,emissor,fgc,fidc_rating,fidc_cart,id:Date.now()});comparar();}
+function remAtivo(id){ativos=ativos.filter(a=>a.id!==id);if(ativos.length)comparar();else renderEmpty();}
+function renderEmpty(){document.getElementById('res-title').textContent='Aguardando ativos';document.getElementById('res-meta').textContent='';document.getElementById('res-area').innerHTML='<div class="empty-state"><div class="empty-icon">◈</div><div class="empty-text">Adicione ativos no painel ao lado para comparar</div></div>';}
+async function comparar(){if(!ativos.length){renderEmpty();return;}try{const r=await fetch(API+'/api/comparar/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({perfil,ativos:ativos.map(({id,...a})=>a)})});const d=await r.json();mkt=d.mercado;updateMbar();renderRanking(d.ranking);}catch(e){document.getElementById('res-area').innerHTML='<div class="empty-state"><div class="empty-icon">⚠</div><div class="empty-text">Erro ao conectar à API.</div></div>';}}
+function renderRanking(ranking){const pNome={conservador:'Conservador',moderado:'Moderado',sofisticado:'Sofisticado'};document.getElementById('res-title').textContent='Ranking · '+pNome[perfil];document.getElementById('res-meta').textContent=ranking.length+' ativo'+(ranking.length!==1?'s':'');const html=ranking.map(a=>{const isBest=a.melhor,meses=Math.round(a.prazo_dias/30.417),isIpca=IPCA_IDX.has(a.indexador),taxaDisp=a.indexador==='cdi_pct'?`${a.taxa}% CDI`:a.indexador==='cdi_sp'?`CDI+${a.taxa}%`:a.indexador==='ipca_sp'?`IPCA+${a.taxa}%`:`${a.taxa}% a.a.`,badgeHtml=isBest&&a.melhor_tipo==='ok'?'<span class="card-badge badge-melhor">★ Melhor</span>':isBest?'<span class="card-badge badge-warn">★ Melhor c/ atenção</span>':a.adequacao==='ok'?'<span class="card-badge badge-ok">Adequado</span>':a.adequacao==='warn'?'<span class="card-badge badge-warn">Atenção</span>':'<span class="card-badge badge-no">Inadequado</span>',irDisp=a.ir===0?'<div class="metric-value exempt">Isento</div>':`<div class="metric-value">${(a.ir*100).toFixed(1)}%</div>`,realColor=a.juro_real>=0?'pos':'neg',sharpeColor=a.sharpe>=1?'pos':a.sharpe<0?'neg':'',sharpeW=Math.min(100,Math.max(0,(a.sharpe/2)*100)),sharpeBarColor=a.sharpe>=1.5?'#22C55E':a.sharpe>=1?'#4ADE80':a.sharpe>=0?'#F59E0B':'#EF4444',notas=[];if(isIpca)notas.push('juro real = spread líq.');if(a.fidc_rating)notas.push('Rating '+a.fidc_rating.toUpperCase());if(a.fgc)notas.push('FGC');if(a.indexador!=='cdi_pct')notas.push(a.equiv_cdi_pct.toFixed(1)+'% CDI líq.');const ativo=ativos.find(x=>x.emissor===a.emissor&&x.taxa===a.taxa);return`<div class="ativo-card ${isBest&&a.melhor_tipo==='ok'?'melhor':''} ${a.adequacao==='no'?'inadequado':''}"><button class="btn-rem" onclick="remAtivo(${ativo?.id})">×</button><div class="card-top"><div><div class="card-emissor">${a.emissor}</div><div class="card-tipo">${TNOME[a.tipo]} · ${taxaDisp} · ${meses}m</div></div>${badgeHtml}</div><div class="card-metrics"><div class="metric"><div class="metric-label">Bruto a.a.</div><div class="metric-value">${a.bruto.toFixed(2)}%</div></div><div class="metric"><div class="metric-label">IR</div>${irDisp}</div><div class="metric"><div class="metric-label">Líquido a.a.</div><div class="metric-value">${a.liquido.toFixed(2)}%</div></div><div class="metric"><div class="metric-label">Juro real</div><div class="metric-value ${realColor}">${a.juro_real>0?'+':''}${a.juro_real.toFixed(2)}%</div></div><div class="metric"><div class="metric-label">Sharpe RF</div><div class="metric-value ${sharpeColor}">${a.sharpe.toFixed(2)}</div><div class="sharpe-bar-wrap"><div class="sharpe-bar-fill" style="width:${sharpeW}%;background:${sharpeBarColor};"></div></div></div></div>${a.motivo?`<div class="card-motivo">${a.motivo}</div>`:''}${notas.length?`<div class="card-notas">${notas.map(n=>`<span class="nota">${n}</span>`).join('')}</div>`:''}</div>`;}).join('');document.getElementById('res-area').innerHTML=html;}
+function getIR(d,i){if(i)return 0;if(d<=180)return .225;if(d<=360)return .20;if(d<=720)return .175;return .15;}
+function calcBruto(idx,taxa){if(idx==='cdi_pct')return mkt.cdi*(taxa/100);if(idx==='cdi_sp')return mkt.cdi+taxa;if(idx==='ipca_sp')return mkt.ipca+taxa;return taxa;}
+function calcEquiv(){const idx=document.getElementById('eq-idx').value,taxa=parseFloat(document.getElementById('eq-taxa').value)||0,prazo=parseInt(document.getElementById('eq-prazo').value)||365,isento=document.getElementById('eq-tipo').value==='isento',ir=getIR(prazo,isento),bruto=calcBruto(idx,taxa),liq=bruto*(1-ir),real=IPCA_IDX.has(idx)?(bruto-mkt.ipca)*(1-ir):liq-mkt.iproj,cdiPct=(liq/mkt.cdi*100).toFixed(1);document.getElementById('equiv-res').innerHTML=`<div class="equiv-item"><div class="equiv-label">% CDI líquido equiv.</div><div class="equiv-value" style="color:var(--accent2)">${cdiPct}%</div></div><div class="equiv-item"><div class="equiv-label">Juro real líquido</div><div class="equiv-value" style="color:${real>=0?'var(--accent2)':'var(--red)'}">${real>0?'+':''}${real.toFixed(2)}%</div></div><div class="equiv-item"><div class="equiv-label">Taxa líquida equiv.</div><div class="equiv-value">${liq.toFixed(2)}%</div></div>`;}
+function buildEquivTable(){const linhas=[85,88,90,95,100,105,108,110,115,120],ir=0.175,rows=linhas.map(p=>{const b=mkt.cdi*(p/100),l=b*(1-ir),r=l-mkt.iproj,rc=r>=0?'var(--accent2)':'var(--red)';return`<tr><td>${p}% CDI</td><td>${b.toFixed(2)}%</td><td>${l.toFixed(2)}%</td><td style="color:${rc}">${r>0?'+':''}${r.toFixed(2)}%</td><td style="color:var(--accent2)">${l.toFixed(2)}%</td></tr>`;}).join('');document.getElementById('equiv-table-wrap').innerHTML=`<table class="equiv-table"><thead><tr><th>% CDI</th><th>Bruto</th><th>Líquido</th><th>Juro real</th><th>LCI/LCA equiv.</th></tr></thead><tbody>${rows}</tbody></table><p style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:8px;">CDI ${mkt.cdi.toFixed(2)}% · IR 17,5% · IPCA proj. ${mkt.iproj.toFixed(2)}%</p>`;}
+function updateMbar(){document.getElementById('m-selic').textContent=mkt.selic.toFixed(2)+'%';document.getElementById('m-cdi').textContent=mkt.cdi.toFixed(2)+'%';document.getElementById('m-cdi-liq').textContent=mkt.cdi_liq_nominal.toFixed(2)+'%';document.getElementById('m-cdi-real').textContent=mkt.cdi_liq_real.toFixed(2)+'%';document.getElementById('m-ipca').textContent=mkt.ipca.toFixed(2)+'%';document.getElementById('m-iproj').textContent=mkt.iproj.toFixed(2)+'%';document.getElementById('m-jr').textContent=mkt.juro_real.toFixed(2)+'%';}
+async function loadMercado(){try{const r=await fetch(API+'/api/mercado/');if(r.ok){mkt=await r.json();updateMbar();document.getElementById('sdot').className='sdot live';document.getElementById('slabel').textContent='BCB · '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});document.getElementById('f-update').textContent='Dados BCB · '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}}catch(e){document.getElementById('sdot').className='sdot err';document.getElementById('slabel').textContent='API offline';updateMbar();}}
+loadMercado();calcEquiv();
+</script>
+</body>
+</html>
